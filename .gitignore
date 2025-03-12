@@ -1,2 +1,4 @@
 ./downloaded
-./exports
+./exports/*
+./exports/
+/exports/
