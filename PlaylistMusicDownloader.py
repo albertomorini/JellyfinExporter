@@ -4,7 +4,7 @@ import os
 BASE_URL = "http://10.0.0.3:8096/"
 HEADERS = {'Authorization': 'MediaBrowser Client="Jellyfin%20Web", Device="Firefox", DeviceId="TW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTAuMTU7IHJ2OjEzNS4wKSBHZWNrby8yMDEwMDEwMSBGaXJlZm94LzEzNS4wfDE3NDA1MTgwNTk1NjE1", Version="10.10.6", Token="cd00993a7bfe4b2caccc288aedf170aa"'}
 
-FOLDER_DEST = "~/MusicExported/"
+FOLDER_DEST = "/home/alby/MusicExported/"
 
 def downloadFile(fileID,playlistName,fileName, createPlaylistFolder=False):
     url = BASE_URL+"Items/"+fileID+"/Download"
