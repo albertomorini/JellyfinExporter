@@ -18,11 +18,8 @@ def downloadFile(fileID,playlistName,fileName, createPlaylistFolder=False):
             else:
                 finalPath = FOLDER_DEST + "downloaded"
                 playlistFile = FOLDER_DEST+"/"+playlistName+".m3u"
-                ## create a m3u playlist file
-                if(not os.path.exists(playlistFile)):
-                    with open(playlistFile,"w") as f:
-                        f.write("#test"+"\n")
-                with open(playlistFile,"a") as f:
+                
+                with open(playlistFile,"a") as f: ## append file name to create the playlist
                     f.write("./downloaded/"+fileName+"\n")
 
 
@@ -80,10 +77,12 @@ def main():
     for p in playlists:
         print(p)
         songs_id = getSongsIDFromPlaylist(playlists[p])
+        #check if the playlist file exists, if so, delete (to update all the list) -- the media already existing won't be downloaded again
+        playlistFile = FOLDER_DEST+"/"+p+".m3u"
+        with open(playlistFile,"w") as f: #erease and write everytime the file
+            f.write("#"+p+"\n")
         for s in songs_id:
             downloadFile(s, p, getSongMetadata(s))
-
-    
 
 
 main()
