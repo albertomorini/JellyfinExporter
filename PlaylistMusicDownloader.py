@@ -4,24 +4,42 @@ import os
 BASE_URL = "http://10.0.0.3:8096/"
 HEADERS = {'Authorization': 'MediaBrowser Client="Jellyfin%20Web", Device="Firefox", DeviceId="TW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTAuMTU7IHJ2OjEzNS4wKSBHZWNrby8yMDEwMDEwMSBGaXJlZm94LzEzNS4wfDE3NDA1MTgwNTk1NjE1", Version="10.10.6", Token="cd00993a7bfe4b2caccc288aedf170aa"'}
 
-FOLDER_DEST = "./downloaded/"
+FOLDER_DEST = "./exports/"
 
-def downloadFile(fileID,playlistName,fileName):
+def downloadFile(fileID,playlistName,fileName, createPlaylistFolder=False):
     url = BASE_URL+"Items/"+fileID+"/Download"
     with requests.get(url, stream=True, headers=HEADERS) as res:
         if(res.status_code==200):
             if(not os.path.isdir(FOLDER_DEST)):
                 os.mkdir(FOLDER_DEST)
-            if(not os.path.isdir(FOLDER_DEST+"/"+playlistName)):
-                os.mkdir(FOLDER_DEST+"/"+playlistName)
+            
+            if(createPlaylistFolder):
+                finalPath = FOLDER_DEST + "/" +playlistName
+            else:
+                finalPath = FOLDER_DEST + "downloaded"
+                playlistFile = FOLDER_DEST+"/"+playlistName+".m3u"
+                ## create a m3u playlist file
+                if(not os.path.exists(playlistFile)):
+                    with open(playlistFile,"w") as f:
+                        f.write("#test")
+                with open(playlistFile,"a") as f:
+                    f.write("./downloaded/"+fileName+"\n")
 
-            if(not os.path.exists(os.path.join(os.getcwd(), (FOLDER_DEST+"/"+playlistName), fileName))): #only if not exists
-                with open(FOLDER_DEST+"/"+playlistName+"/"+fileName, 'wb') as f:
+
+            if(not os.path.isdir(finalPath)):
+                os.mkdir(finalPath)
+
+            if(not os.path.exists(os.path.join(os.getcwd(), (finalPath), fileName))): #only if not exists
+                with open(finalPath+"/"+fileName, 'wb') as f:
                     for chunk in res.iter_content(chunk_size=8192): 
                         f.write(chunk)
-                    print("Downloaded "+fileName+" in folder: "+FOLDER_DEST+"/"+playlistName)
+                    print("Downloaded "+fileName+" in folder: "+finalPath)
+                
         else:
             print("ERROR ON DOWNLOADING THE SONG - fileid: "+fileID)
+
+
+
 
 def getSongsIDFromPlaylist(PlaylistID):
     url = BASE_URL+"Playlists/"+PlaylistID
@@ -31,7 +49,6 @@ def getSongsIDFromPlaylist(PlaylistID):
         return res["ItemIds"]
     else:
         return []
-
 
 def getSongMetadata(songID):
     url = BASE_URL+"Items/"+songID
@@ -44,7 +61,9 @@ def getSongMetadata(songID):
     else:
         return null
 
+#### 
 
+## for each playlist will be created a folder with the same name containing the songs
 def main():
     # cycle thru the playlist, done manually because the API to retrieve automatically is a hell 
     ##  --> http://10.0.0.3:8096/Users/acbf0cef0357403a9a3abb314b67b2a3/Items?SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=Playlist&Recursive=true&Fields=PrimaryImageAspectRatio%2CSortName%2CCanDelete&StartIndex=0
@@ -64,8 +83,7 @@ def main():
         for s in songs_id:
             downloadFile(s, p, getSongMetadata(s))
 
+    
 
 
 main()
-
-
