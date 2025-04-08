@@ -73,8 +73,8 @@ def main():
     playlists["chillin"] = "4638cefbb8c256e05192e51aed0f48ec"
     playlists["deep night"] = "959668ac405340c31c34046129b35ac1"
     playlists["energy"] = "3c87f65b5fe53cf74c36219e8425af59"
-    playlists["gym"] = "ff8fe24fbc3bd811a9bfccbd3113c7eb"
-    playlists["runnin"] = "301709956ac5e8a3d051797c2605fb1d"
+    # playlists["gym"] = "ff8fe24fbc3bd811a9bfccbd3113c7eb"
+    # playlists["runnin"] = "301709956ac5e8a3d051797c2605fb1d"
     playlists["stuff"] = "1d64b9eab05f552af44fdb8c3efe8353"
 
     for p in playlists:
