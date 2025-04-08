@@ -21,7 +21,7 @@ def downloadFile(fileID,playlistName,fileName, createPlaylistFolder=False):
                 ## create a m3u playlist file
                 if(not os.path.exists(playlistFile)):
                     with open(playlistFile,"w") as f:
-                        f.write("#test")
+                        f.write("#test"+"\n")
                 with open(playlistFile,"a") as f:
                     f.write("./downloaded/"+fileName+"\n")
 
