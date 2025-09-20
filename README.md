@@ -13,6 +13,8 @@ $JustNewMusic --> if 1 delete old songs not contained in register and download n
 
 ```
 
+*use case of JustNewMusic*: I personally download the song into a folder on my PC, then I move them (via LocalSend app, WiFi) to my phone where I already got the previous downloaded songs and then I just need the updated playlist
+
 
 #TODO:
 
