@@ -2,3 +2,6 @@
 ./exports/*
 ./exports/
 /exports/
+
+register.json
+register_temp.json

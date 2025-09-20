@@ -1,27 +1,38 @@
 import requests
 import os
 import json
-
-
-def LoadRegister():
-    try:
-        config_file = open("./register.json",'r')
-        return json.loads(config_file.read())
-    except Exception as e:
-        config_file = open("./register.json","w")
-        config_file.write()
-        return dict()
-
-def StoreRegister():
-    #TODO
-
+import sys
+########################################################################################
+########################################################################################
 
 BASE_URL = "http://10.0.0.3:8096/"
 HEADERS = {'Authorization': 'MediaBrowser Client="Jellyfin Web", Device="Firefox", DeviceId="TW96aWxsYS81LjAgKFgxMTsgTGludXggeDg2XzY0OyBydjoxNDIuMCkgR2Vja28vMjAxMDAxMDEgRmlyZWZveC8xNDIuMHwxNzU2NTQ3NzI3MTQ2", Version="10.10.7", Token="9b2c5c1a83d5448981ab9cfcf89eadf5"'}
 
 FOLDER_DEST = "/home/alby/MusicExported/"
 
-def downloadFile(fileID,playlistName,fileName, createPlaylistFolder=False):
+## LOAD THE REGISTER OF SONGS ALREADY DOWNLOADED
+def LoadRegister():
+    try:
+        config_file = open("./register.json",'r')
+        return json.loads(config_file.read())
+    except Exception as e:
+        initRegister = dict()
+        initRegister["known_songs"] = []
+        StoreRegister(initRegister)
+        return initRegister
+
+## STORE THE JSON 
+def StoreRegister(register):
+    config_file = open("./register.json","w")
+    config_file.write(json.dumps(register))
+    config_file.close()
+    
+
+
+
+##################
+
+def downloadFile(register,fileID,playlistName,fileName, createPlaylistFolder=False,deleteOld=False):
     url = BASE_URL+"Items/"+fileID+"/Download"
     with requests.get(url, stream=True, headers=HEADERS) as res:
         if(res.status_code==200):
@@ -37,15 +48,23 @@ def downloadFile(fileID,playlistName,fileName, createPlaylistFolder=False):
                     f.write("./downloaded/"+fileName+"\n")
 
 
-            if(not os.path.isdir(finalPath)):
+            if(not os.path.isdir(finalPath)): ## make final dir to store songs
                 os.mkdir(finalPath)
 
-            if(not os.path.exists(os.path.join(os.getcwd(), (finalPath), fileName))): #only if not exists
+            # if(not os.path.exists(os.path.join(os.getcwd(), (finalPath), fileName))): #only if not exists
+            if(fileID not in register["known_songs"]): # if not exists store the song
                 with open(finalPath+"/"+fileName, 'wb') as f:
                     for chunk in res.iter_content(chunk_size=8192): 
                         f.write(chunk)
                     print("Downloaded "+fileName+" in folder: "+finalPath)
-                
+            
+            elif(deleteOld): #if song already stored and justNewMusic is enabled, delete the old ones
+                try:
+                    print("Deleting "+fileName)
+                    os.remove(finalPath+"/"+fileName)
+                except OSError as e:
+                    pass # print(e)
+
         else:
             print("ERROR ON DOWNLOADING THE SONG - fileid: "+fileID)
 
@@ -72,13 +91,19 @@ def getSongMetadata(songID):
 
 ######################## 
 
-
-def justNewMusic():
-    register = LoadRegister()
-    
-
 ## for each playlist will be created a folder with the same name containing the songs
 def main():
+
+    pref_CretePlaylist = False
+    pref_JustNewMusic = False
+    
+    if(len(sys.argv)>1):
+        print(sys.argv)
+        pref_CretePlaylist = True if int(sys.argv[1]) == 1 else False
+        pref_JustNewMusic = True if int(sys.argv[2]) == 1 else False ## delete the previous download and store the new one
+
+    register = LoadRegister()
+
     # cycle thru the playlist, done manually because the API to retrieve automatically is a hell 
     ##  --> http://10.0.0.3:8096/Users/acbf0cef0357403a9a3abb314b67b2a3/Items?SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=Playlist&Recursive=true&Fields=PrimaryImageAspectRatio%2CSortName%2CCanDelete&StartIndex=0
 
@@ -99,7 +124,11 @@ def main():
             f.write("#"+p+"\n")
 
         for s in songs_id:
-            downloadFile(s, p, getSongMetadata(s))
+            downloadFile(register,s, p, getSongMetadata(s),pref_CretePlaylist,pref_JustNewMusic)
+            register["known_songs"].append(s)
+        
+        StoreRegister(register)
 
 
 main()
+
