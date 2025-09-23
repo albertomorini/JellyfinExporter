@@ -123,9 +123,14 @@ def main():
         with open(playlistFile,"w") as f: #erease and write everytime the file
             f.write("#"+p+"\n")
 
+
+        # if(pref_JustNewMusic):
+        #     songs_id = set(songs_id)-set(register["known_songs"]) ## to avoid unuseful re
+
         for s in songs_id:
             downloadFile(register,s, p, getSongMetadata(s),pref_CretePlaylist,pref_JustNewMusic)
-            register["known_songs"].append(s)
+            if(s not in register["known_songs"]):
+                register["known_songs"].append(s)
         
         StoreRegister(register)
 
