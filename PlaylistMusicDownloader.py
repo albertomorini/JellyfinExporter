@@ -10,27 +10,8 @@ HEADERS = {'Authorization': 'MediaBrowser Client="Jellyfin Web", Device="Firefox
 
 FOLDER_DEST = "/home/alby/MusicExported/"
 
-## LOAD THE REGISTER OF SONGS ALREADY DOWNLOADED
-def LoadRegister():
-    try:
-        config_file = open("./register.json",'r')
-        return json.loads(config_file.read())
-    except Exception as e:
-        initRegister = dict()
-        initRegister["known_songs"] = []
-        StoreRegister(initRegister)
-        return initRegister
+########################################################################################
 
-## STORE THE JSON 
-def StoreRegister(register):
-    config_file = open("./register.json","w")
-    config_file.write(json.dumps(register))
-    config_file.close()
-    
-
-
-
-##################
 
 def downloadFile(register,fileID,playlistName,fileName, createPlaylistFolder=False,deleteOld=False):
     url = BASE_URL+"Items/"+fileID+"/Download"
@@ -89,17 +70,37 @@ def getSongMetadata(songID):
     else:
         return null
 
-######################## 
+########################################################################################
+
+
+## LOAD THE REGISTER OF SONGS ALREADY DOWNLOADED
+def LoadRegister():
+    try:
+        config_file = open("./register.json",'r')
+        return json.loads(config_file.read())
+    except Exception as e:
+        initRegister = dict()
+        initRegister["known_songs"] = []
+        StoreRegister(initRegister)
+        return initRegister
+
+## STORE THE JSON 
+def StoreRegister(register):
+    config_file = open("./register.json","w")
+    config_file.write(json.dumps(register))
+    config_file.close()
+    
+
 
 ## for each playlist will be created a folder with the same name containing the songs
 def main():
 
-    pref_CretePlaylist = False
+    pref_CretePlaylistFolder = False
     pref_JustNewMusic = False
     
     if(len(sys.argv)>1):
         print(sys.argv)
-        pref_CretePlaylist = True if int(sys.argv[1]) == 1 else False
+        pref_CretePlaylistFolder = True if int(sys.argv[1]) == 1 else False
         pref_JustNewMusic = True if int(sys.argv[2]) == 1 else False ## delete the previous download and store the new one
 
     register = LoadRegister()
@@ -119,16 +120,21 @@ def main():
         print("Downloading ", p)
         songs_id = getSongsIDFromPlaylist(playlists[p])
         #check if the playlist file exists, if so, delete (to update all the list) -- the media already existing won't be downloaded again
-        playlistFile = FOLDER_DEST+"/"+p+".m3u"
-        with open(playlistFile,"w") as f: #erease and write everytime the file
-            f.write("#"+p+"\n")
+        playlistFile = FOLDER_DEST+"/"+p+".m3u" 
 
+        if(pref_JustNewMusic):
+            with open(playlistFile,"w") as a: ## in just new music we can go to append the new music to the queque of playlist
+                f.write("#"+p+"\n")
 
-        # if(pref_JustNewMusic):
-        #     songs_id = set(songs_id)-set(register["known_songs"]) ## to avoid unuseful re
+            ## and in new music we can avoid fetching all song to the playlist, so remove the stored songs_ids
+            songs_id = set(songs_id)-set(register["known_songs"])
+        else:
+            #everything, so recreate the playlist file in itself, in writing mode thus do manage also delation, update (eg. change position of a song)
+            with open(playlistFile,"w") as f:
+                f.write("#"+p+"\n")
 
         for s in songs_id:
-            downloadFile(register,s, p, getSongMetadata(s),pref_CretePlaylist,pref_JustNewMusic)
+            downloadFile(register,s, p, getSongMetadata(s),pref_CretePlaylistFolder,pref_JustNewMusic)
             if(s not in register["known_songs"]):
                 register["known_songs"].append(s)
         
