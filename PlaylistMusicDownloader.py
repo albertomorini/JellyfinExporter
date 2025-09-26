@@ -115,6 +115,13 @@ def main():
     playlists["energy"] = "3c87f65b5fe53cf74c36219e8425af59"
     playlists["stuff"] = "1d64b9eab05f552af44fdb8c3efe8353"
     
+    if(pref_JustNewMusic):
+        storageDir = FOLDER_DEST+"downloaded"
+        for filename in os.listdir(storageDir):
+            file_path = os.path.join(storageDir, filename)
+            if(not os.path.isdir(file_path)):
+                os.remove(file_path)
+            
 
     for p in playlists:
         print("Downloading ", p)
@@ -123,13 +130,15 @@ def main():
         playlistFile = FOLDER_DEST+"/"+p+".m3u" 
 
         if(pref_JustNewMusic):
-            with open(playlistFile,"w") as a: ## in just new music we can go to append the new music to the queque of playlist
+            with open(playlistFile,"a") as f: ## in just new music we can go to append the new music to the queque of playlist
                 f.write("#"+p+"\n")
 
             ## and in new music we can avoid fetching all song to the playlist, so remove the stored songs_ids
             songs_id = set(songs_id)-set(register["known_songs"])
+    
         else:
             #everything, so recreate the playlist file in itself, in writing mode thus do manage also delation, update (eg. change position of a song)
+            register["known_songs"] = []
             with open(playlistFile,"w") as f:
                 f.write("#"+p+"\n")
 
