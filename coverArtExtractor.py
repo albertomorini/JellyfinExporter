@@ -3,7 +3,7 @@ import subprocess
 
 
 ffmpeg_cmd = "ffmpeg -i t.m4a -an cover.jpg"
-PATH = "/Users/alby/Downloads/t.m4a"
+PATH = "/Volumes/MEDIA/MUSIC/"
 
 
 #process each song by searching and saving the lyrics
@@ -18,8 +18,4 @@ def scanFolder(path):
                 # print(["cd ", root, " ;", "ffmpeg -i ",name," -an cover.jpg"]) 
                 continue
                
-
-
-
-
-scanFolder("/Volumes/MEDIA/MUSIC/")
+scanFolder(PATH)
