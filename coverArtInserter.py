@@ -15,30 +15,33 @@ def cleanUp(oldPath,newPath):
 
 
 def insertImage(albumPath, songName):
-    input_path = os.path.join(albumPath, songName)
-    output_path = os.path.join(albumPath, "tmp"+ songName)
+    try:
+        input_path = os.path.join(albumPath, songName)
+        output_path = os.path.join(albumPath, "tmp"+ songName)
 
-    # ffmpeg command as list (safer and no shell escaping needed)
-    ffmpeg_cmd = [
-        "ffmpeg",
-        "-i", input_path,
-        "-i", albumPath+"/cover.jpg",
-        "-map", "0",
-        "-map", "1",
-        "-c", "copy",
-        "-metadata:s:v", "title=Album cover",
-        "-metadata:s:v", "comment=Cover (front)",
-        "-disposition:v", "attached_pic",
-        output_path
-    ]
+        # ffmpeg command as list (safer and no shell escaping needed)
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-i", input_path,
+            "-i", albumPath+"/cover.jpg",
+            "-map", "0",
+            "-map", "1",
+            "-c", "copy",
+            "-metadata:s:v", "title=Album cover",
+            "-metadata:s:v", "comment=Cover (front)",
+            "-disposition:v", "attached_pic",
+            output_path
+        ]
 
-    result = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    if result.returncode != 0:
-        print(f"ffmpeg error for {songName}:\n{result.stderr.decode()}")
-    else:
-        print(f"Added for: {songName}")
-        cleanUp(input_path,output_path)
+        if result.returncode != 0:
+            print(f"ffmpeg error for {songName}:\n{result.stderr.decode()}")
+        else:
+            print(f"Added for: {songName}")
+            cleanUp(input_path,output_path)
+    except Exception as e:
+        pass
 
 
 def has_cover_art(file_path):
