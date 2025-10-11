@@ -5,7 +5,8 @@ import json
 from pathlib import Path
 
 ffmpeg_cmd = 'ffmpeg -i $songName -i cover.jpg -map 0 -map 1 -c copy -metadata:s:v title="Album cover" -metadata:s:v comment="Cover (front)" -disposition:v attached_pic $songName'
-PATH = "/mnt/MEDIA/MUSIC/"
+PATH = input("Insert path: ")
+##PATH = "/mnt/MEDIA/MUSIC/"
 
 
 ### rename the new file, replacing the old one (no needed to have duplicates)
