@@ -10,16 +10,45 @@ HEADERS = {'Authorization': 'MediaBrowser Client="Jellyfin Web", Device="Firefox
 
 FOLDER_DEST = "/home/alby/MusicExported/"
 
+
+PREF_CretePlaylistFolder = False
+PREF_VirginExport = False
+
+# load preferences if indicated
+if(len(sys.argv)>1):
+    print(sys.argv)
+    PREF_CretePlaylistFolder = True if int(sys.argv[1]) == 1 else False
+    PREF_VirginExport = True if int(sys.argv[2]) == 1 else False ## delete the previous download and store the new one
+
 ########################################################################################
 
 
-def downloadFile(register,fileID,playlistName,fileName, createPlaylistFolder=False,deleteOld=False):
+## LOAD THE REGISTER OF SONGS ALREADY DOWNLOADED
+def LoadRegister():
+    try:
+        config_file = open("./register.json",'r')
+        return json.loads(config_file.read())
+    except Exception as e:
+        initRegister = dict()
+        initRegister["known_songs"] = []
+        StoreRegister(initRegister)
+        return initRegister
+
+## STORE THE JSON 
+def StoreRegister(register):
+    config_file = open("./register.json","w")
+    config_file.write(json.dumps(register))
+    config_file.close()
+########################################################################################
+    
+def downloadFile(register,fileID,playlistName,fileName, createPlaylistFolder=False):
     url = BASE_URL+"Items/"+fileID+"/Download"
     with requests.get(url, stream=True, headers=HEADERS) as res:
         if(res.status_code==200):
             if(not os.path.isdir(FOLDER_DEST)):
                 os.mkdir(FOLDER_DEST)
             
+            print(fileName)
             if(createPlaylistFolder):
                 finalPath = FOLDER_DEST + "/" +playlistName
             else:
@@ -33,18 +62,18 @@ def downloadFile(register,fileID,playlistName,fileName, createPlaylistFolder=Fal
                 os.mkdir(finalPath)
 
             # if(not os.path.exists(os.path.join(os.getcwd(), (finalPath), fileName))): #only if not exists
-            if(fileID not in register["known_songs"]): # if not exists store the song
+            if(fileID not in register[playlistName]): # if not exists store the song
                 with open(finalPath+"/"+fileName, 'wb') as f:
                     for chunk in res.iter_content(chunk_size=8192): 
                         f.write(chunk)
                     print("Downloaded "+fileName+" in folder: "+finalPath)
             
-            elif(deleteOld): #if song already stored and justNewMusic is enabled, delete the old ones
-                try:
-                    print("Deleting "+fileName)
-                    os.remove(finalPath+"/"+fileName)
-                except OSError as e:
-                    pass # print(e)
+            # elif(deleteOld): #if song already stored and justNewMusic is enabled, delete the old ones
+            #     try:
+            #         print("Deleting "+fileName)
+            #         os.remove(finalPath+"/"+fileName)
+            #     except OSError as e:
+            #         pass # print(e)
 
         else:
             print("ERROR ON DOWNLOADING THE SONG - fileid: "+fileID)
@@ -70,41 +99,11 @@ def getSongMetadata(songID):
     else:
         return null
 
-########################################################################################
-
-
-## LOAD THE REGISTER OF SONGS ALREADY DOWNLOADED
-def LoadRegister():
-    try:
-        config_file = open("./register.json",'r')
-        return json.loads(config_file.read())
-    except Exception as e:
-        initRegister = dict()
-        initRegister["known_songs"] = []
-        StoreRegister(initRegister)
-        return initRegister
-
-## STORE THE JSON 
-def StoreRegister(register):
-    config_file = open("./register.json","w")
-    config_file.write(json.dumps(register))
-    config_file.close()
-    
-
 
 ## for each playlist will be created a folder with the same name containing the songs
 def main():
 
-    pref_CretePlaylistFolder = False
-    pref_JustNewMusic = False
-    
-    if(len(sys.argv)>1):
-        print(sys.argv)
-        pref_CretePlaylistFolder = True if int(sys.argv[1]) == 1 else False
-        pref_JustNewMusic = True if int(sys.argv[2]) == 1 else False ## delete the previous download and store the new one
-
     register = LoadRegister()
-
     # cycle thru the playlist, done manually because the API to retrieve automatically is a hell 
     ##  --> http://10.0.0.3:8096/Users/acbf0cef0357403a9a3abb314b67b2a3/Items?SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=Playlist&Recursive=true&Fields=PrimaryImageAspectRatio%2CSortName%2CCanDelete&StartIndex=0
 
@@ -115,40 +114,33 @@ def main():
     playlists["energy"] = "3c87f65b5fe53cf74c36219e8425af59"
     playlists["stuff"] = "1d64b9eab05f552af44fdb8c3efe8353"
     
-    if(pref_JustNewMusic):
+    if(PREF_VirginExport): ## remove previously downloaded songs
         storageDir = FOLDER_DEST+"downloaded"
         for filename in os.listdir(storageDir):
             file_path = os.path.join(storageDir, filename)
             if(not os.path.isdir(file_path)):
                 os.remove(file_path)
-            
-
-    for p in playlists:
-        print("Downloading ", p)
-        songs_id = getSongsIDFromPlaylist(playlists[p])
-        #check if the playlist file exists, if so, delete (to update all the list) -- the media already existing won't be downloaded again
-        playlistFile = FOLDER_DEST+"/"+p+".m3u" 
-
-        if(pref_JustNewMusic):
-            with open(playlistFile,"a") as f: ## in just new music we can go to append the new music to the queque of playlist
-                f.write("#"+p+"\n")
-
-            ## and in new music we can avoid fetching all song to the playlist, so remove the stored songs_ids
-            songs_id = set(songs_id)-set(register["known_songs"])
-    
-        else:
+        
+    for playlistName in playlists:
+        playlistFile = FOLDER_DEST+"/"+playlistName+".m3u"
+        if(PREF_VirginExport):
             #everything, so recreate the playlist file in itself, in writing mode thus do manage also delation, update (eg. change position of a song)
-            register["known_songs"] = []
+            register[playlistName] = []
             with open(playlistFile,"w") as f:
-                f.write("#"+p+"\n")
+                f.write("#"+playlistFile+"\n")
+
+        print("Downloading ", playlistName)
+        songs_id = getSongsIDFromPlaylist(playlists[playlistName]) #get the IDs of the songs
+        with open(playlistFile,"a") as f: ## in just new music we can go to append the new music to the queque of playlist
+            f.write("#"+playlistName+"\n")
+
+        songs_id = set(songs_id)-set(register[playlistName])
 
         for s in songs_id:
-            downloadFile(register,s, p, getSongMetadata(s),pref_CretePlaylistFolder,pref_JustNewMusic)
-            if(s not in register["known_songs"]):
-                register["known_songs"].append(s)
+            if(s not in register[playlistName]):
+                downloadFile(register,s, playlistName, getSongMetadata(s),PREF_CretePlaylistFolder)
+                register[playlistName].append(s)
         
         StoreRegister(register)
 
-
 main()
-
