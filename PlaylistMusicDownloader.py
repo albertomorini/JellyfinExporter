@@ -6,7 +6,7 @@ import sys
 ########################################################################################
 
 BASE_URL = "http://10.0.0.3:8096/"
-HEADERS = {'Authorization': 'MediaBrowser Client="Jellyfin Web", Device="Firefox", DeviceId="TW96aWxsYS81LjAgKFgxMTsgTGludXggeDg2XzY0OyBydjoxNDIuMCkgR2Vja28vMjAxMDAxMDEgRmlyZWZveC8xNDIuMHwxNzU2NTQ3NzI3MTQ2", Version="10.10.7", Token="9b2c5c1a83d5448981ab9cfcf89eadf5"'}
+HEADERS = {'Authorization': 'MediaBrowser Client="Jellyfin%20Web", Device="Firefox", DeviceId="TW96aWxsYS81LjAgKFgxMTsgTGludXggeDg2XzY0OyBydjoxNDYuMCkgR2Vja28vMjAxMDAxMDEgRmlyZWZveC8xNDYuMHwxNzY2NTczMzI4MTgw", Version="10.11.4", Token="e333b841f09d4d129918e51d9915f4d8"'}
 
 FOLDER_DEST = "/home/alby/MusicExported/"
 
@@ -56,10 +56,14 @@ def downloadFile(register,fileID,playlistName,fileName, createPlaylistFolder=Fal
                 playlistFile = FOLDER_DEST+"/"+playlistName+".m3u"
                 with open(playlistFile,"a") as f: ## append file name to create the playlist
                     f.write("./downloaded/"+fileName+"\n")
+                    f.close()
 
 
             if(not os.path.isdir(finalPath)): ## make final dir to store songs
                 os.mkdir(finalPath)
+
+            if(playlistName not in register):
+                register[playlistName] = []
 
             # if(not os.path.exists(os.path.join(os.getcwd(), (finalPath), fileName))): #only if not exists
             if(fileID not in register[playlistName]): # if not exists store the song
@@ -111,8 +115,8 @@ def main():
     playlists = dict()
     playlists["chillin"] = "4638cefbb8c256e05192e51aed0f48ec"
     playlists["deep night"] = "959668ac405340c31c34046129b35ac1"
-    playlists["energy"] = "3c87f65b5fe53cf74c36219e8425af59"
-    playlists["stuff"] = "1d64b9eab05f552af44fdb8c3efe8353"
+    playlists["productivity"] = "5249d82dfb0a8530040b0485a86ab1ee"
+    playlists["godmode"]= "b3590f563320eb6ad8952305ab31e1c5"
     
     if(PREF_VirginExport): ## remove previously downloaded songs
         storageDir = FOLDER_DEST+"downloaded"
@@ -134,13 +138,20 @@ def main():
         with open(playlistFile,"a") as f: ## in just new music we can go to append the new music to the queque of playlist
             f.write("#"+playlistName+"\n")
 
-        songs_id = set(songs_id)-set(register[playlistName])
+        try:
+            songs_id = set(songs_id)-set(register[playlistName])
+        except Exception as e:
+            song_id = set(songs_id)
 
         for s in songs_id:
-            if(s not in register[playlistName]):
-                downloadFile(register,s, playlistName, getSongMetadata(s),PREF_CretePlaylistFolder)
-                register[playlistName].append(s)
-        
+            if(playlistName in register):
+                if(s not in register[playlistName]):
+                    downloadFile(register,s, playlistName, getSongMetadata(s),PREF_CretePlaylistFolder)
+                    register[playlistName].append(s)
+            else:
+                    downloadFile(register,s, playlistName, getSongMetadata(s),PREF_CretePlaylistFolder)
+                    register[playlistName].append(s)
+
         StoreRegister(register)
 
 main()

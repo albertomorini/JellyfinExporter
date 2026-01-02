@@ -3,7 +3,7 @@ import subprocess
 
 
 ffmpeg_cmd = "ffmpeg -i t.m4a -an cover.jpg"
-PATH = "/Volumes/MEDIA/MUSIC/"
+PATH = "/mnt/MEDIA/MUSIC/"
 
 
 #process each song by searching and saving the lyrics
